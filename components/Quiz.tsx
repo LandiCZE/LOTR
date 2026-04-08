@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { questions as allQuestions, Question } from "@/data/questions"
+import { questions as allQuestions, Question, Category } from "@/data/questions"
 import { shuffle, shuffleAnswers } from "@/lib/shuffle"
 
 type Mode = "all" | "wrong"
+type Phase = "select" | "playing" | "done"
 type AnswerState = "idle" | "correct" | "wrong"
 
 interface ActiveQuestion extends Question {
@@ -12,6 +13,15 @@ interface ActiveQuestion extends Question {
   shuffledCorrect: number
   originalIndex: number
 }
+
+const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
+  { id: "characters", label: "Characters", emoji: "🧙" },
+  { id: "fellowship", label: "Fellowship", emoji: "💍" },
+  { id: "places",     label: "Places",     emoji: "🗺️" },
+  { id: "lore",       label: "Lore",       emoji: "📜" },
+  { id: "battles",    label: "Battles",    emoji: "⚔️" },
+  { id: "quotes",     label: "Quotes",     emoji: "💬" },
+]
 
 function prepareQuestions(pool: Question[]): ActiveQuestion[] {
   return shuffle(pool).map((q, i) => {
@@ -21,6 +31,10 @@ function prepareQuestions(pool: Question[]): ActiveQuestion[] {
 }
 
 export default function Quiz() {
+  const [phase, setPhase] = useState<Phase>("select")
+  const [selectedCategories, setSelectedCategories] = useState<Set<Category>>(
+    new Set(CATEGORIES.map((c) => c.id))
+  )
   const [mode, setMode] = useState<Mode>("all")
   const [questions, setQuestions] = useState<ActiveQuestion[]>([])
   const [current, setCurrent] = useState(0)
@@ -30,14 +44,8 @@ export default function Quiz() {
   const [answerState, setAnswerState] = useState<AnswerState>("idle")
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [wrongQuestions, setWrongQuestions] = useState<Question[]>([])
-  const [done, setDone] = useState(false)
   const [startTime, setStartTime] = useState<number>(Date.now())
   const [speedBonus, setSpeedBonus] = useState<number | null>(null)
-
-  useEffect(() => {
-    setQuestions(prepareQuestions(allQuestions))
-    setStartTime(Date.now())
-  }, [])
 
   const q = questions[current]
   const progress = questions.length > 0 ? (current / questions.length) * 100 : 0
@@ -46,18 +54,43 @@ export default function Quiz() {
     setAnswerState("idle")
     setSelectedIndex(null)
     setSpeedBonus(null)
-
     if (current + 1 >= questions.length) {
-      setDone(true)
+      setPhase("done")
     } else {
       setCurrent((c) => c + 1)
       setStartTime(Date.now())
     }
   }, [current, questions.length])
 
+  function toggleCategory(id: Category) {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        if (next.size > 1) next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  function startQuiz(pool?: Question[]) {
+    const base = pool ?? allQuestions.filter((q) =>
+      !q.categories || q.categories.length === 0 || q.categories.some((c) => selectedCategories.has(c))
+    )
+    setQuestions(prepareQuestions(base))
+    setCurrent(0)
+    setScore(0)
+    setStreak(0)
+    setAnswerState("idle")
+    setSelectedIndex(null)
+    setWrongQuestions([])
+    setStartTime(Date.now())
+    setPhase("playing")
+  }
+
   function handleAnswer(index: number) {
     if (answerState !== "idle") return
-
     const elapsed = (Date.now() - startTime) / 1000
     setSelectedIndex(index)
 
@@ -77,7 +110,7 @@ export default function Quiz() {
       setAnswerState("wrong")
       setWrongQuestions((prev) => {
         const already = prev.find((wq) => wq.question === q.question)
-        return already ? prev : [...prev, { question: q.question, answers: q.answers, correct: q.correct, category: q.category }]
+        return already ? prev : [...prev, { question: q.question, answers: q.answers, correct: q.correct, categories: q.categories }]
       })
       if ("vibrate" in navigator) navigator.vibrate([100, 50, 100])
     }
@@ -85,54 +118,67 @@ export default function Quiz() {
     setTimeout(nextQuestion, 1200)
   }
 
-  function startWrongOnly() {
-    if (wrongQuestions.length === 0) return
-    setQuestions(prepareQuestions(wrongQuestions))
-    setCurrent(0)
-    setScore(0)
-    setStreak(0)
-    setAnswerState("idle")
-    setSelectedIndex(null)
-    setDone(false)
-    setWrongQuestions([])
-    setMode("wrong")
-    setStartTime(Date.now())
-  }
-
-  function restart() {
-    setQuestions(prepareQuestions(allQuestions))
-    setCurrent(0)
-    setScore(0)
-    setStreak(0)
-    setBestStreak(0)
-    setAnswerState("idle")
-    setSelectedIndex(null)
-    setDone(false)
-    setWrongQuestions([])
-    setMode("all")
-    setStartTime(Date.now())
-  }
-
   function getButtonClass(index: number) {
-    const base =
-      "w-full text-left px-5 py-4 rounded-xl text-base font-medium transition-all duration-200 border-2 active:scale-95 "
-
-    if (answerState === "idle") {
-      return base + "border-amber-800/40 bg-stone-800 hover:bg-stone-700 hover:border-amber-600 text-stone-100"
-    }
-
-    if (index === q.shuffledCorrect) {
-      return base + "border-emerald-500 bg-emerald-900/60 text-emerald-200 scale-[1.02]"
-    }
-
-    if (index === selectedIndex && answerState === "wrong") {
-      return base + "border-red-500 bg-red-900/60 text-red-200"
-    }
-
+    const base = "w-full text-left px-5 py-4 rounded-xl text-base font-medium transition-all duration-200 border-2 active:scale-95 "
+    if (answerState === "idle") return base + "border-amber-800/40 bg-stone-800 hover:bg-stone-700 hover:border-amber-600 text-stone-100"
+    if (index === q.shuffledCorrect) return base + "border-emerald-500 bg-emerald-900/60 text-emerald-200 scale-[1.02]"
+    if (index === selectedIndex && answerState === "wrong") return base + "border-red-500 bg-red-900/60 text-red-200"
     return base + "border-stone-700/30 bg-stone-800/50 text-stone-500"
   }
 
-  if (done) {
+  const questionCount = allQuestions.filter(
+    (q) => !q.categories || q.categories.length === 0 || q.categories.some((c) => selectedCategories.has(c))
+  ).length
+
+  // — Category selection screen —
+  if (phase === "select") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-950 px-4">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center space-y-1">
+            <div className="text-4xl">🧙‍♂️</div>
+            <h1 className="text-2xl font-bold text-amber-400">LOTR Quiz</h1>
+            <p className="text-stone-500 text-sm">Choose your categories</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {CATEGORIES.map((cat) => {
+              const active = selectedCategories.has(cat.id)
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => toggleCategory(cat.id)}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl border-2 text-sm font-medium transition-all active:scale-95 ${
+                    active
+                      ? "border-amber-600 bg-amber-900/30 text-amber-300"
+                      : "border-stone-700 bg-stone-800/50 text-stone-500"
+                  }`}
+                >
+                  <span>{cat.emoji}</span>
+                  <span>{cat.label}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="text-center text-stone-500 text-sm">
+            {questionCount} question{questionCount !== 1 ? "s" : ""} selected
+          </div>
+
+          <button
+            onClick={() => startQuiz()}
+            disabled={questionCount === 0}
+            className="w-full py-4 rounded-xl bg-amber-700 hover:bg-amber-600 disabled:opacity-40 text-white font-bold text-base transition-colors"
+          >
+            Start Quiz
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // — End screen —
+  if (phase === "done") {
     const total = questions.length
     const pct = Math.round((score / total) * 100)
     return (
@@ -144,27 +190,31 @@ export default function Quiz() {
           </h2>
           <div className="bg-stone-800 rounded-2xl p-5 space-y-3">
             <div className="text-4xl font-bold text-white">
-              {score}
-              <span className="text-stone-400 text-xl">/{total}</span>
+              {score}<span className="text-stone-400 text-xl">/{total}</span>
             </div>
             <div className="text-amber-400 font-semibold">{pct}% correct</div>
             <div className="text-stone-400 text-sm">Best streak: {bestStreak} 🔥</div>
           </div>
-
           <div className="space-y-3">
             {wrongQuestions.length > 0 && (
               <button
-                onClick={startWrongOnly}
+                onClick={() => { setMode("wrong"); startQuiz(wrongQuestions) }}
                 className="w-full py-4 rounded-xl bg-amber-700 hover:bg-amber-600 text-white font-bold text-base transition-colors"
               >
                 ⚔️ Retry {wrongQuestions.length} wrong answers
               </button>
             )}
             <button
-              onClick={restart}
+              onClick={() => startQuiz()}
               className="w-full py-4 rounded-xl bg-stone-700 hover:bg-stone-600 text-white font-semibold text-base transition-colors"
             >
-              Start over
+              Play again
+            </button>
+            <button
+              onClick={() => { setBestStreak(0); setMode("all"); setPhase("select") }}
+              className="w-full py-3 rounded-xl text-stone-500 hover:text-stone-300 text-sm transition-colors"
+            >
+              Change categories
             </button>
           </div>
         </div>
@@ -172,7 +222,8 @@ export default function Quiz() {
     )
   }
 
-  if (questions.length === 0 || !q) return <div className="min-h-screen bg-stone-950" />
+  // — Quiz screen —
+  if (!q) return <div className="min-h-screen bg-stone-950" />
 
   return (
     <div className="flex flex-col min-h-screen bg-stone-950 px-4 pt-4 pb-8">
@@ -185,37 +236,26 @@ export default function Quiz() {
           </span>
           <div className="flex items-center gap-3">
             <span className="text-stone-300 font-medium">{score} pts</span>
-            {streak >= 2 && (
-              <span className="text-orange-400 font-bold">
-                🔥 {streak}
-              </span>
-            )}
+            {streak >= 2 && <span className="text-orange-400 font-bold">🔥 {streak}</span>}
           </div>
         </div>
 
         {/* Progress bar */}
         <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-amber-600 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-amber-600 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
 
         {/* Category badge */}
-        {q.category && (
+        {q.categories && q.categories.length > 0 && (
           <div className="text-xs text-stone-500 uppercase tracking-wider font-medium">
-            {q.category}
+            {q.categories.join(" · ")}
           </div>
         )}
 
         {/* Image */}
         {q.image && (
           <div className="rounded-2xl overflow-hidden border border-stone-800 bg-white">
-            <img
-              src={q.image}
-              alt=""
-              className="w-full object-contain max-h-52 p-3"
-            />
+            <img src={q.image} alt="" className="w-full object-contain max-h-52 p-3" />
           </div>
         )}
 
@@ -225,15 +265,11 @@ export default function Quiz() {
         </div>
 
         {/* Feedback banner */}
-        <div
-          className={`text-center text-sm font-semibold py-2 rounded-lg transition-all duration-200 ${
-            answerState === "correct"
-              ? "bg-emerald-900/50 text-emerald-400"
-              : answerState === "wrong"
-              ? "bg-red-900/50 text-red-400"
-              : "opacity-0 pointer-events-none bg-transparent"
-          }`}
-        >
+        <div className={`text-center text-sm font-semibold py-2 rounded-lg transition-all duration-200 ${
+          answerState === "correct" ? "bg-emerald-900/50 text-emerald-400"
+          : answerState === "wrong" ? "bg-red-900/50 text-red-400"
+          : "opacity-0 pointer-events-none bg-transparent"
+        }`}>
           {answerState === "correct" && (speedBonus ? `Correct! +${speedBonus} speed bonus ⚡` : "Correct!")}
           {answerState === "wrong" && `Wrong — it was: ${q.shuffledAnswers[q.shuffledCorrect]}`}
           {answerState === "idle" && "placeholder"}
