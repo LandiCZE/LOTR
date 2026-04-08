@@ -1,12 +1,30 @@
-export type Category = 'fellowship' | 'characters' | 'places' | 'lore' | 'battles' | 'quotes'
+export type Category = 'fellowship' | 'characters' | 'places' | 'lore' | 'battles' | 'quotes' | 'book-vs-film' | 'creatures' | 'flowers' | 'geography'
 
-export interface Question {
+export interface MatchQuestion {
+  type: 'match'
+  question: string
+  pairs: { left: string; right: string }[]
+  categories?: Category[]
+}
+
+
+export interface ChoiceQuestion {
+  type?: 'choice'
   question: string
   answers: string[]
   correct: number
   categories?: Category[]
   image?: string
 }
+
+export interface OrderQuestion {
+  type: 'order'
+  question: string
+  items: string[]   // correct order
+  categories?: Category[]
+}
+
+export type Question = ChoiceQuestion | OrderQuestion | MatchQuestion
 
 export const questions: Question[] = [
   // Fellowship
@@ -64,7 +82,7 @@ export const questions: Question[] = [
     question: "What is the name of Gandalf's horse?",
     answers: ["Brego", "Hasufel", "Shadowfax", "Asfaloth"],
     correct: 2,
-    categories: ["characters"],
+    categories: ["characters", "creatures"],
   },
   {
     question: "What race is Legolas?",
@@ -81,12 +99,6 @@ export const questions: Question[] = [
   {
     question: "Who forged the One Ring?",
     answers: ["Celebrimbor", "Sauron", "Morgoth", "Saruman"],
-    correct: 1,
-    categories: ["characters"],
-  },
-  {
-    question: "What is Sauron's original name?",
-    answers: ["Annatar", "Mairon", "Gorthaur", "Thû"],
     correct: 1,
     categories: ["characters"],
   },
@@ -118,7 +130,7 @@ export const questions: Question[] = [
     question: "What creature did Gollum call 'Precious'?",
     answers: ["His fish", "The One Ring", "His cave", "Frodo"],
     correct: 1,
-    categories: ["characters"],
+    categories: ["characters", "creatures"],
   },
   {
     question: "What was Gollum's real name before the Ring corrupted him?",
@@ -130,12 +142,6 @@ export const questions: Question[] = [
     question: "Who found the One Ring before Gollum?",
     answers: ["Sméagol", "Déagol", "Bilbo", "Isildur"],
     correct: 1,
-    categories: ["characters"],
-  },
-  {
-    question: "Bilbo Baggins found the One Ring in the lair of which creature?",
-    answers: ["Gollum", "Smaug", "Azog", "Ungoliant"],
-    correct: 0,
     categories: ["characters"],
   },
 
@@ -227,10 +233,10 @@ export const questions: Question[] = [
     categories: ["lore"],
   },
   {
-    question: "What are the Ents?",
-    answers: ["Tree spirits", "Shepherds of the Trees", "Ancient tree creatures", "Tolkien called them 'Shepherds of the Trees'"],
-    correct: 3,
-    categories: ["lore", "characters"],
+    question: "What does Treebeard call the Ents when introducing them to Merry and Pippin?",
+    answers: ["Masters of the Forest", "Shepherds of the Trees", "Guardians of Fangorn", "The Oldest Living Things"],
+    correct: 1,
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "What is the elvish word for 'friend' carved on the Doors of Durin?",
@@ -254,7 +260,7 @@ export const questions: Question[] = [
     question: "What is the name of Bilbo's famous tale about his adventure?",
     answers: ["There and Back Again", "My Journey to Erebor", "The Long Expected Party", "Quest for the Lonely Mountain"],
     correct: 0,
-    categories: ["lore"],
+    categories: ["lore", "creatures"],
   },
 
   // Battles
@@ -336,7 +342,7 @@ export const questions: Question[] = [
     question: "What creature is Beorn?",
     answers: ["Elf", "Shape-shifter", "Wizard", "Orc"],
     correct: 1,
-    categories: ["lore"],
+    categories: ["lore", "creatures"],
   },
   {
     question: "Who finds the One Ring first (chronologically)?",
@@ -348,7 +354,7 @@ export const questions: Question[] = [
     question: "The spiders Bilbo fights in Mirkwood — do they have names?",
     answers: ["Yes, they are named Shelob", "Yes, named by Tolkien in notes", "No name is given to any of them", "Only their queen is named"],
     correct: 2,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "Who rescues the dwarves from the Wood-elves in Mirkwood?",
@@ -360,7 +366,7 @@ export const questions: Question[] = [
     question: "What is the Arkenstone also known as?",
     answers: ["King's Jewel", "Heart of the Mountain", "Dragon's Eye", "Stone of Erebor"],
     correct: 1,
-    categories: ["lore"],
+    categories: ["lore", "creatures"],
   },
   {
     question: "Who is NOT one of the Nazgûl?",
@@ -402,12 +408,6 @@ export const questions: Question[] = [
     question: "Who carries the Ring into Mordor alongside Frodo?",
     answers: ["Merry", "Pippin", "Sam", "Aragorn"],
     correct: 2,
-    categories: ["characters"],
-  },
-  {
-    question: "What is the name of the giant spider in The Two Towers?",
-    answers: ["Shelob", "Ungoliant", "Attercop", "Aragog"],
-    correct: 0,
     categories: ["characters"],
   },
   {
@@ -544,37 +544,25 @@ export const questions: Question[] = [
     question: "What order of being is a Balrog — what are they, beneath the Valar?",
     answers: ["Valar", "Maiar", "Úmaiar", "Ainur"],
     correct: 1,
-    categories: ["lore", "characters"],
-  },
-  {
-    question: "Shelob is the last child of which primordial spider from the First Age?",
-    answers: ["Glaurung", "Draugluin", "Ungoliant", "Gothmog"],
-    correct: 2,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "The Nazgûl's flying mounts have no true name in Tolkien's writing. What are they commonly called?",
     answers: ["Wyverns", "Fell beasts", "Shadow-drakes", "Winged wraiths"],
     correct: 1,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "Smaug is specifically what type of dragon?",
     answers: ["Cold-drake", "Sea-drake", "Fire-drake", "Long-worm"],
     correct: 2,
-    categories: ["lore", "characters"],
-  },
-  {
-    question: "Who created the first dragons in Middle-earth?",
-    answers: ["Sauron", "Ungoliant", "Morgoth", "Glaurung"],
-    correct: 2,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "The Ents were created at whose request among the Valar?",
     answers: ["Manwë", "Yavanna", "Aulë", "Varda"],
     correct: 1,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "What race does Gollum actually belong to?",
@@ -583,34 +571,28 @@ export const questions: Question[] = [
     categories: ["characters"],
   },
   {
-    question: "What did Ungoliant devour that caused her to grow beyond all bounds?",
-    answers: ["The Silmarils", "The Light of the Two Trees of Valinor", "The fruit of Telperion", "Morgoth's crown"],
-    correct: 1,
-    categories: ["lore", "characters"],
-  },
-  {
     question: "The Great Eagles of Middle-earth serve which Vala?",
     answers: ["Yavanna", "Ulmo", "Manwë", "Oromë"],
     correct: 2,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "How are Wargs different from ordinary wolves?",
     answers: ["They are larger but otherwise the same", "They are sentient and can communicate", "They breathe fire", "They are undead wolves"],
     correct: 1,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "The Balrog in Moria has a name. What is it?",
     answers: ["Gothmog", "Durin's Bane", "Lungorthin", "Ancalagon"],
     correct: 1,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
   {
     question: "What is the Watcher in the Water outside Moria's gates?",
     answers: ["A giant squid", "A Balrog's servant", "Its nature is never identified by Tolkien", "A corrupted Ent"],
     correct: 2,
-    categories: ["lore", "characters"],
+    categories: ["lore", "characters", "creatures"],
   },
 
   // Visual — flags & emblems
@@ -669,5 +651,489 @@ export const questions: Question[] = [
     answers: ["Gandalf", "Sam", "Bilbo", "Pippin"],
     correct: 3,
     categories: ["quotes", "characters"],
+  },
+
+  // Deep lore
+  {
+    question: "What is the Elvish name for Rivendell?",
+    answers: ["Caras Galadhon", "Imladris", "Tirion", "Eregion"],
+    correct: 1,
+    categories: ["places", "lore"],
+  },
+  {
+    question: "How old is Bilbo at the start of The Fellowship of the Ring?",
+    answers: ["100", "108", "111", "128"],
+    correct: 2,
+    categories: ["characters"],
+  },
+  {
+    question: "What is Mirkwood renamed to at the end of The Return of the King?",
+    answers: ["Greenwood the Great", "Eryn Lasgalen", "East Lórien", "Wood of Ithilien"],
+    correct: 1,
+    categories: ["places", "lore"],
+  },
+  {
+    question: "What is the full name of the innkeeper at the Prancing Pony in Bree?",
+    answers: ["Bill Ferny", "Barliman Butterbur", "Bob Sandybanks", "Harry Goatleaf"],
+    correct: 1,
+    categories: ["characters"],
+  },
+  {
+    question: "What is the name of the river that runs through Rivendell?",
+    answers: ["Anduin", "Silverlode", "Bruinen", "Mitheithel"],
+    correct: 2,
+    categories: ["places", "lore"],
+  },
+  {
+    question: "Which of these dwarves is NOT one of Thorin's company?",
+    answers: ["Bifur", "Bofur", "Bombur", "Fundin"],
+    correct: 3,
+    categories: ["characters", "lore"],
+  },
+  {
+    question: "What titles does Aragorn take when crowned king?",
+    answers: ["Elessar only", "Telcontar only", "Envinyatar only", "All three: Elessar, Telcontar, Envinyatar"],
+    correct: 3,
+    categories: ["characters", "lore"],
+  },
+  {
+    question: "Who was the first member of the Fellowship to be lost?",
+    answers: ["Boromir", "Frodo", "Gandalf", "Aragorn"],
+    correct: 2,
+    categories: ["fellowship", "characters"],
+  },
+  {
+    question: "Which pass leads into Mordor from the direction of Minas Morgul?",
+    answers: ["The Black Gate", "Morannon", "Cirith Ungol", "Morgul Vale"],
+    correct: 2,
+    categories: ["places"],
+  },
+  {
+    question: "Which of these is NOT one of the three Elven Rings of Power?",
+    answers: ["Narya", "Nenya", "Vilya", "Eärendil"],
+    correct: 3,
+    categories: ["lore"],
+  },
+
+  // Book vs Film
+  {
+    question: "Who kills Saruman, and does it differ between book and film?",
+    answers: ["Gríma Wormtongue (both)", "Legolas (film), Gríma (book)", "Gríma kills him in both, but in different places and times", "Saruman survives in both"],
+    correct: 2,
+    categories: ["book-vs-film", "characters"],
+  },
+  {
+    question: "Where does Frodo meet Gildor Inglorion?",
+    answers: ["In the Shire (book only — cut from film)", "In Rivendell (both)", "In Lothlórien (film only)", "He never appears"],
+    correct: 0,
+    categories: ["book-vs-film", "characters"],
+  },
+  {
+    question: "Who leads the attack on Helm's Deep in the films vs the books?",
+    answers: ["Saruman commands in both", "Saruman shown commanding in film — unnamed commanders in book", "Sauron in book, Saruman in film", "Gríma in book, Saruman in film"],
+    correct: 1,
+    categories: ["book-vs-film", "battles"],
+  },
+  {
+    question: "How does Frodo's departure from the Shire differ between book and film?",
+    answers: ["Leaves immediately with Sam (film) — lengthy delay and planning (book)", "With Gandalf in both", "Captured by Nazgûl (film), escapes secretly (book)", "Identical in both"],
+    correct: 0,
+    categories: ["book-vs-film"],
+  },
+  {
+    question: "The Scouring of the Shire — where does it appear?",
+    answers: ["In both book and film", "Film only", "Book only — cut entirely from the films", "Neither"],
+    correct: 2,
+    categories: ["book-vs-film"],
+  },
+  {
+    question: "Who fights at Helm's Deep in the film but is NOT present in the book?",
+    answers: ["Aragorn", "Legolas", "An Elvish army from Lothlórien led by Haldir", "Gimli"],
+    correct: 2,
+    categories: ["book-vs-film", "battles"],
+  },
+  {
+    question: "Who rescues Frodo at the Ford of Bruinen in the book, replaced by Arwen in the film?",
+    answers: ["Gandalf", "Glorfindel", "Elrond", "Círdan"],
+    correct: 1,
+    categories: ["book-vs-film", "characters"],
+  },
+  {
+    question: "In the film, Gandalf confronts the Witch-king at Minas Tirith and his staff is broken. What happens in the book?",
+    answers: ["This scene does not exist in the book", "Gandalf defeats him instead", "Aragorn breaks the staff", "It happens identically"],
+    correct: 0,
+    categories: ["book-vs-film"],
+  },
+  {
+    question: "How does Faramir treat the Ring when he meets Frodo — book vs film?",
+    answers: ["Tries to take it to Gondor (film) — refuses it immediately without temptation (book)", "Refuses it in both", "Takes it in both", "Does not meet Frodo in book"],
+    correct: 0,
+    categories: ["book-vs-film", "characters"],
+  },
+  {
+    question: "What happens to the Mouth of Sauron at the Black Gate — book vs film?",
+    answers: ["Identical in both", "Aragorn decapitates him in film — he rides away alive in book", "He kills Aragorn in book", "He only appears in the book"],
+    correct: 1,
+    categories: ["book-vs-film"],
+  },
+
+  // Order questions
+  {
+    type: "order",
+    question: "Order these events from earliest to latest:",
+    items: [
+      "Bilbo finds the One Ring in Gollum's cave",
+      "The Battle of Five Armies",
+      "Frodo leaves Bag End with the Ring",
+      "The Fellowship is formed in Rivendell",
+      "The One Ring is destroyed in Mount Doom",
+    ],
+    categories: ["lore", "creatures"],
+  },
+  {
+    type: "order",
+    question: "Order Frodo's journey from first to last:",
+    items: [
+      "Leaves the Shire",
+      "Meets Strider at the Prancing Pony",
+      "Arrives at Rivendell",
+      "Passes through Moria",
+      "Reaches Lothlórien",
+      "Reaches the Falls of Rauros",
+    ],
+    categories: ["lore", "places"],
+  },
+  {
+    type: "order",
+    question: "Order these Hobbit events from earliest to latest:",
+    items: [
+      "Bilbo leaves Bag End with the Dwarves",
+      "Riddles in the Dark with Gollum",
+      "Escape from the Wood-elves in barrels",
+      "Bilbo speaks with Smaug",
+      "The Battle of Five Armies",
+    ],
+    categories: ["lore", "creatures"],
+  },
+  {
+    type: "order",
+    question: "Order these characters by age, youngest first:",
+    items: [
+      "Pippin",
+      "Merry",
+      "Sam",
+      "Frodo",
+      "Gandalf",
+      "Galadriel",
+    ],
+    categories: ["characters", "lore"],
+  },
+  {
+    type: "order",
+    question: "Order these battles from earliest to latest in the Third Age:",
+    items: [
+      "Battle of Greenfields",
+      "Battle of Azanulbizar",
+      "Battle of Five Armies",
+      "Battle of Helm's Deep",
+      "Battle of the Pelennor Fields",
+    ],
+    categories: ["battles", "lore"],
+  },
+
+  // Creatures & Animals
+  {
+    question: "What is the name of the great eagle who rescues Gandalf from Orthanc?",
+    answers: ["Landroval", "Gwaihir", "Thorondor", "Meneldor"],
+    correct: 1,
+    categories: ["creatures", "characters"],
+  },
+  {
+    question: "What is special about the breed of horse Shadowfax belongs to?",
+    answers: ["They are immortal", "They are the Mearas — lords of all horses", "They were bred by Elves", "They can speak"],
+    correct: 1,
+    categories: ["creatures", "lore"],
+  },
+  {
+    question: "What are Huorns?",
+    answers: ["A type of Orc", "Awakened hostile trees, darker than Ents", "A breed of mountain troll", "River spirits"],
+    correct: 1,
+    categories: ["creatures", "lore"],
+  },
+  {
+    question: "What were Farmer Maggot's three dogs named?",
+    answers: ["Grip, Fang, and Wolf", "Shadow, Ghost, and Fang", "Bite, Snap, and Growl", "Storm, Night, and Grim"],
+    correct: 0,
+    categories: ["creatures"],
+  },
+  {
+    question: "What is Tom Bombadil's pony named?",
+    answers: ["Bill", "Brego", "Fatty Lumpkin", "Hasufel"],
+    correct: 2,
+    categories: ["creatures", "characters"],
+  },
+  {
+    question: "Radagast the Brown is known for his deep affinity with what?",
+    answers: ["Trees and growing things", "Birds and beasts", "Rivers and rain", "Stars and sky"],
+    correct: 1,
+    categories: ["creatures", "characters"],
+  },
+  {
+    question: "Bilbo Baggins found the One Ring in the lair of which creature?",
+    answers: ["Gollum", "Smaug", "Azog", "A cave troll"],
+    correct: 0,
+    categories: ["characters", "creatures"],
+  },
+  {
+    question: "What is the name of the giant spider Frodo and Sam encounter in The Two Towers?",
+    answers: ["Shelob", "Attercop", "Ungoliant", "Aragog"],
+    correct: 0,
+    categories: ["characters", "creatures"],
+  },
+  // Flowers & Plants
+  {
+    question: "What is the common name for the healing herb Aragorn calls 'athelas'?",
+    answers: ["Shadowbane", "Kingsfoil", "Hearthwort", "Miruvor"],
+    correct: 1,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "What small golden flower did Sam see growing in Lothlórien, later naming his daughter after it?",
+    answers: ["Niphredil", "Simbelmynë", "Elanor", "Uilos"],
+    correct: 2,
+    categories: ["flowers", "characters"],
+  },
+  {
+    question: "What white flower grows on the burial mounds of the Kings of Rohan?",
+    answers: ["Elanor", "Simbelmynë", "Niphredil", "Athelas"],
+    correct: 1,
+    categories: ["flowers", "places"],
+  },
+  {
+    question: "What type of trees line the paths of Lothlórien, unique to that forest?",
+    answers: ["Lebethron", "Athelas", "Mallorn", "Mirkwood oak"],
+    correct: 2,
+    categories: ["flowers", "places"],
+  },
+  {
+    question: "What is the name of the reviving cordial Gandalf shares with the Fellowship in the Redhorn Pass?",
+    answers: ["Miruvor", "Lembas", "Cram", "Entwash"],
+    correct: 0,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "Pipe-weed — which hobbit variety is considered the finest quality?",
+    answers: ["Old Toby", "Longbottom Leaf", "Southern Star", "Barnfire Blend"],
+    correct: 1,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "What wood are the walking staves given to Frodo and Sam by Galadriel made from?",
+    answers: ["Mallorn", "Mirkwood ash", "Lebethron", "Rowan"],
+    correct: 2,
+    categories: ["flowers", "characters"],
+  },
+  {
+    question: "Athelas is said to have healing power only in the hands of what kind of person?",
+    answers: ["A wizard", "The heir of the kings of old", "An Elf-lord", "A Ranger of the North"],
+    correct: 1,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "Old Man Willow is found in which location?",
+    answers: ["Fangorn Forest", "Mirkwood", "The Old Forest", "The Barrow-downs"],
+    correct: 2,
+    categories: ["flowers", "places"],
+  },
+  {
+    question: "What do Elves call the pipe-weed plant?",
+    answers: ["Galenas", "Miruvor", "Niphredil", "They have no name for it"],
+    correct: 0,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "Lembas — what is the Elvish waybread made from, according to Tolkien?",
+    answers: ["Mallorn leaves and honey", "Corn harvested by the Elves of Yavanna's gift", "Miruvor and grain", "Athelas-infused flour"],
+    correct: 1,
+    categories: ["flowers", "lore"],
+  },
+  {
+    question: "The White Tree of Gondor in Minas Tirith — what happened to it before Aragorn's return?",
+    answers: ["It was burned by Sauron", "It had withered and died", "It was cut down by Denethor", "It was taken to Mordor"],
+    correct: 1,
+    categories: ["flowers", "places"],
+  },
+  // Match the pair
+  {
+    type: "match",
+    question: "Match each character to their weapon:",
+    pairs: [
+      { left: "Gandalf",  right: "Glamdring" },
+      { left: "Aragorn",  right: "Andúril" },
+      { left: "Frodo",    right: "Sting" },
+      { left: "Thorin",   right: "Orcrist" },
+    ],
+    categories: ["characters"],
+  },
+  {
+    type: "match",
+    question: "Match each character to their home:",
+    pairs: [
+      { left: "Frodo",     right: "Bag End" },
+      { left: "Legolas",   right: "Mirkwood" },
+      { left: "Gimli",     right: "Erebor" },
+      { left: "Aragorn",   right: "Rivendell" },
+    ],
+    categories: ["characters", "places"],
+  },
+  {
+    type: "match",
+    question: "Match each Ring to its bearer:",
+    pairs: [
+      { left: "Narya (Fire)",  right: "Gandalf" },
+      { left: "Nenya (Water)", right: "Galadriel" },
+      { left: "Vilya (Air)",   right: "Elrond" },
+    ],
+    categories: ["lore", "characters"],
+  },
+  {
+    type: "match",
+    question: "Match each location to its kingdom:",
+    pairs: [
+      { left: "Edoras",       right: "Rohan" },
+      { left: "Minas Tirith", right: "Gondor" },
+      { left: "Erebor",       right: "Dwarves" },
+      { left: "Rivendell",    right: "Elves" },
+    ],
+    categories: ["places"],
+  },
+  {
+    type: "match",
+    question: "Match each hobbit to their family:",
+    pairs: [
+      { left: "Frodo",   right: "Baggins" },
+      { left: "Merry",   right: "Brandybuck" },
+      { left: "Pippin",  right: "Took" },
+      { left: "Sam",     right: "Gamgee" },
+    ],
+    categories: ["characters", "fellowship"],
+  },
+  {
+    type: "match",
+    question: "Match each wizard to their colour:",
+    pairs: [
+      { left: "Gandalf",  right: "Grey / White" },
+      { left: "Saruman",  right: "White / Many Colours" },
+      { left: "Radagast", right: "Brown" },
+    ],
+    categories: ["characters", "lore"],
+  },
+  {
+    type: "match",
+    question: "Match each creature to what they guard or inhabit:",
+    pairs: [
+      { left: "Shelob",           right: "Cirith Ungol" },
+      { left: "Durin's Bane",     right: "Moria" },
+      { left: "Watcher in Water", right: "Gates of Moria" },
+      { left: "Smaug",            right: "Erebor" },
+    ],
+    categories: ["creatures", "places"],
+  },
+  // Geography
+  {
+    question: "What is the name of the Great River that flows through Middle-earth from north to south?",
+    answers: ["Bruinen", "Silverlode", "Anduin", "Entwash"],
+    correct: 2,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "Which mountain does the Fellowship attempt to cross before being forced into Moria?",
+    answers: ["Mount Doom", "Zirakzigil", "Caradhras", "Methedras"],
+    correct: 2,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "What is the name of the gap between the Misty Mountains and the White Mountains?",
+    answers: ["The Gap of Rohan", "The Fords of Isen", "The Deeping Coomb", "The Pass of Caradhras"],
+    correct: 0,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "What river flows from Fangorn Forest through Rohan to meet the Anduin?",
+    answers: ["Isen", "Bruinen", "Entwash", "Silverlode"],
+    correct: 2,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "The White Mountains (Ered Nimrais) form the border between which two kingdoms?",
+    answers: ["Gondor and Mordor", "Rohan and Gondor", "Rohan and Isengard", "Gondor and Ithilien"],
+    correct: 1,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "At which falls does the Fellowship break apart?",
+    answers: ["Falls of Nimrodel", "Falls of Rauros", "Falls of the Entwash", "Henneth Annûn"],
+    correct: 1,
+    categories: ["geography", "places", "fellowship"],
+  },
+  {
+    question: "What mountain range forms the western and northern borders of Mordor?",
+    answers: ["The White Mountains", "The Misty Mountains", "The Mountains of Shadow (Ephel Dúath)", "The Ash Mountains"],
+    correct: 2,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "What is the name of the hidden window waterfall where Faramir takes Frodo and Sam?",
+    answers: ["Falls of Rauros", "Henneth Annûn", "Nen Hithoel", "Nimrodel"],
+    correct: 1,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "Ithilien is described as a fair region — where is it located in relation to Mordor?",
+    answers: ["North of Mordor", "West of Mordor, between the Anduin and the Mountains of Shadow", "South of Gondor", "East of the Anduin near Rohan"],
+    correct: 1,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "What is the name of the lake that forms above the Falls of Rauros?",
+    answers: ["Lake Evendim", "The Long Lake", "Nen Hithoel", "Mirrormere"],
+    correct: 2,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "Mirrormere (Kheled-zâram) is a sacred lake to the Dwarves — where is it?",
+    answers: ["Inside Erebor", "At the eastern feet of the Misty Mountains below Moria", "In the Iron Hills", "Beneath the Lonely Mountain"],
+    correct: 1,
+    categories: ["geography", "places"],
+  },
+  {
+    question: "What is the name of the ancient road that runs from Rohan through Minas Tirith toward Mordor?",
+    answers: ["The Great East Road", "The Greenway", "The Road to the Morannon", "The Royal Road of Gondor"],
+    correct: 3,
+    categories: ["geography", "places"],
+  },
+
+  // Geography — match
+  {
+    type: "match",
+    question: "Match each river to its region:",
+    pairs: [
+      { left: "Anduin",    right: "All of Middle-earth" },
+      { left: "Entwash",   right: "Rohan" },
+      { left: "Silverlode", right: "Lothlórien" },
+      { left: "Bruinen",   right: "Rivendell" },
+    ],
+    categories: ["geography", "places"],
+  },
+  {
+    type: "match",
+    question: "Match each mountain or range to its location:",
+    pairs: [
+      { left: "Caradhras",       right: "Misty Mountains" },
+      { left: "Mount Doom",      right: "Mordor" },
+      { left: "Erebor",          right: "Wilderland (Rhovanion)" },
+      { left: "Ered Nimrais",    right: "South of Rohan" },
+    ],
+    categories: ["geography", "places"],
   },
 ]

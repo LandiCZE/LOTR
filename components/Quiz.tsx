@@ -1,18 +1,22 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { questions as allQuestions, Question, Category } from "@/data/questions"
+import { questions as allQuestions, Question, ChoiceQuestion, OrderQuestion, MatchQuestion, Category } from "@/data/questions"
 import { shuffle, shuffleAnswers } from "@/lib/shuffle"
+import OrderQuestionComponent from "@/components/OrderQuestion"
+import MatchQuestionComponent from "@/components/MatchQuestion"
 
 type Mode = "all" | "wrong"
 type Phase = "select" | "playing" | "done"
 type AnswerState = "idle" | "correct" | "wrong"
 
-interface ActiveQuestion extends Question {
+interface ActiveChoiceQuestion extends ChoiceQuestion {
   shuffledAnswers: string[]
   shuffledCorrect: number
   originalIndex: number
 }
+
+type ActiveQuestion = ActiveChoiceQuestion | (OrderQuestion & { originalIndex: number }) | (MatchQuestion & { originalIndex: number })
 
 const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: "characters", label: "Characters", emoji: "🧙" },
@@ -21,10 +25,17 @@ const CATEGORIES: { id: Category; label: string; emoji: string }[] = [
   { id: "lore",       label: "Lore",       emoji: "📜" },
   { id: "battles",    label: "Battles",    emoji: "⚔️" },
   { id: "quotes",     label: "Quotes",     emoji: "💬" },
+  { id: "book-vs-film", label: "Book vs Film", emoji: "📽️" },
+  { id: "creatures",    label: "Creatures",   emoji: "🐉" },
+  { id: "flowers",      label: "Flora",       emoji: "🌿" },
+  { id: "geography",    label: "Geography",   emoji: "🏔️" },
 ]
 
 function prepareQuestions(pool: Question[]): ActiveQuestion[] {
   return shuffle(pool).map((q, i) => {
+    if (q.type === "order" || q.type === "match") {
+      return { ...q, originalIndex: i }
+    }
     const { answers, correct } = shuffleAnswers(q.answers, q.correct)
     return { ...q, shuffledAnswers: answers, shuffledCorrect: correct, originalIndex: i }
   })
@@ -90,11 +101,12 @@ export default function Quiz() {
   }
 
   function handleAnswer(index: number) {
-    if (answerState !== "idle") return
+    if (answerState !== "idle" || q.type === "order") return
+    const cq = q as ActiveChoiceQuestion
     const elapsed = (Date.now() - startTime) / 1000
     setSelectedIndex(index)
 
-    if (index === q.shuffledCorrect) {
+    if (index === cq.shuffledCorrect) {
       const bonus = elapsed < 3 ? 1 : 0
       setScore((s) => s + 1 + bonus)
       setStreak((s) => {
@@ -109,8 +121,8 @@ export default function Quiz() {
       setStreak(0)
       setAnswerState("wrong")
       setWrongQuestions((prev) => {
-        const already = prev.find((wq) => wq.question === q.question)
-        return already ? prev : [...prev, { question: q.question, answers: q.answers, correct: q.correct, categories: q.categories }]
+        const already = prev.find((wq) => wq.question === cq.question)
+        return already ? prev : [...prev, { question: cq.question, answers: cq.answers, correct: cq.correct, categories: cq.categories }]
       })
       if ("vibrate" in navigator) navigator.vibrate([100, 50, 100])
     }
@@ -119,9 +131,11 @@ export default function Quiz() {
   }
 
   function getButtonClass(index: number) {
+    if (q.type === "order") return ""
+    const cq = q as ActiveChoiceQuestion
     const base = "w-full text-left px-5 py-4 rounded-xl text-base font-medium transition-all duration-200 border-2 active:scale-95 "
     if (answerState === "idle") return base + "border-amber-800/40 bg-stone-800 hover:bg-stone-700 hover:border-amber-600 text-stone-100"
-    if (index === q.shuffledCorrect) return base + "border-emerald-500 bg-emerald-900/60 text-emerald-200 scale-[1.02]"
+    if (index === cq.shuffledCorrect) return base + "border-emerald-500 bg-emerald-900/60 text-emerald-200 scale-[1.02]"
     if (index === selectedIndex && answerState === "wrong") return base + "border-red-500 bg-red-900/60 text-red-200"
     return base + "border-stone-700/30 bg-stone-800/50 text-stone-500"
   }
@@ -252,8 +266,8 @@ export default function Quiz() {
           </div>
         )}
 
-        {/* Image */}
-        {q.image && (
+        {/* Image (choice questions only) */}
+        {'image' in q && q.image && (
           <div className="rounded-2xl overflow-hidden border border-stone-800 bg-white">
             <img src={q.image} alt="" className="w-full object-contain max-h-52 p-3" />
           </div>
@@ -264,26 +278,68 @@ export default function Quiz() {
           <p className="text-stone-100 text-lg font-semibold leading-snug">{q.question}</p>
         </div>
 
-        {/* Feedback banner */}
-        <div className={`text-center text-sm font-semibold py-2 rounded-lg transition-all duration-200 ${
-          answerState === "correct" ? "bg-emerald-900/50 text-emerald-400"
-          : answerState === "wrong" ? "bg-red-900/50 text-red-400"
-          : "opacity-0 pointer-events-none bg-transparent"
-        }`}>
-          {answerState === "correct" && (speedBonus ? `Correct! +${speedBonus} speed bonus ⚡` : "Correct!")}
-          {answerState === "wrong" && `Wrong — it was: ${q.shuffledAnswers[q.shuffledCorrect]}`}
-          {answerState === "idle" && "placeholder"}
-        </div>
+        {/* Order question */}
+        {q.type === "order" && (
+          <OrderQuestionComponent
+            key={current}
+            question={q}
+            onResult={(_correct, partial, total) => {
+              setScore((s) => s + partial)
+              if (partial === total) {
+                setStreak((s) => { const n = s + 1; setBestStreak((b) => Math.max(b, n)); return n })
+                setAnswerState("correct")
+              } else {
+                setStreak(0)
+                setAnswerState("wrong")
+              }
+              setTimeout(nextQuestion, 2000)
+            }}
+          />
+        )}
 
-        {/* Answer buttons */}
-        <div className="space-y-3">
-          {q.shuffledAnswers.map((answer, i) => (
-            <button key={i} onClick={() => handleAnswer(i)} className={getButtonClass(i)} disabled={answerState !== "idle"}>
-              <span className="text-stone-500 mr-2">{String.fromCharCode(65 + i)}.</span>
-              {answer}
-            </button>
-          ))}
-        </div>
+        {/* Match question */}
+        {q.type === "match" && (
+          <MatchQuestionComponent
+            key={current}
+            question={q}
+            onResult={(correct, total) => {
+              setScore((s) => s + correct)
+              if (correct === total) {
+                setStreak((s) => { const n = s + 1; setBestStreak((b) => Math.max(b, n)); return n })
+                setAnswerState("correct")
+              } else {
+                setStreak(0)
+                setAnswerState("wrong")
+              }
+              setTimeout(nextQuestion, 1500)
+            }}
+          />
+        )}
+
+        {/* Choice question — feedback banner */}
+        {q.type !== "order" && q.type !== "match" && (
+          <div className={`text-center text-sm font-semibold py-2 rounded-lg transition-all duration-200 ${
+            answerState === "correct" ? "bg-emerald-900/50 text-emerald-400"
+            : answerState === "wrong" ? "bg-red-900/50 text-red-400"
+            : "opacity-0 pointer-events-none bg-transparent"
+          }`}>
+            {answerState === "correct" && (speedBonus ? `Correct! +${speedBonus} speed bonus ⚡` : "Correct!")}
+            {answerState === "wrong" && `Wrong — it was: ${'shuffledAnswers' in q ? q.shuffledAnswers[q.shuffledCorrect] : ''}`}
+            {answerState === "idle" && "placeholder"}
+          </div>
+        )}
+
+        {/* Choice question — answer buttons */}
+        {q.type !== "order" && q.type !== "match" && 'shuffledAnswers' in q && (
+          <div className="space-y-3">
+            {q.shuffledAnswers.map((answer, i) => (
+              <button key={i} onClick={() => handleAnswer(i)} className={getButtonClass(i)} disabled={answerState !== "idle"}>
+                <span className="text-stone-500 mr-2">{String.fromCharCode(65 + i)}.</span>
+                {answer}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Wrong answers tracker */}
         {wrongQuestions.length > 0 && answerState === "idle" && (
